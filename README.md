@@ -154,3 +154,4 @@ Plotly supports all five chart types, has built-in tooltips, zoom and legends, a
 | `.xls` file fails | Make sure `pip install -r requirements.txt` finished (it installs `xlrd`). Saving the file as `.xlsx` also works. |
 | Charts do not appear, "chart library did not load" | You are offline. Plotly.js loads from the internet. |
 | "Your uploaded data has expired" | The server was restarted or idle for 30 minutes. Upload the file again. |
+# DataViz
