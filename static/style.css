@@ -4,8 +4,9 @@
             light text on dark backgrounds throughout
    ================================================================ */
 
-/* ---------- Custom Properties ---------- */
-:root {
+/* ---------- Custom Properties (Dark Mode by default) ---------- */
+:root,
+[data-theme="dark"] {
   /* Core dark surfaces */
   --bg: #0b0f19;
   --surface: #131825;
@@ -57,6 +58,65 @@
   --shadow: 0 2px 8px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.2);
   --shadow-lg: 0 8px 40px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3);
+
+  /* Theme Toggle Pill */
+  --toggle-bg: rgba(26, 32, 53, 0.85);
+  --toggle-border: #2a3352;
+  --toggle-text: #e8ecf4;
+}
+
+/* ---------- Light Theme Properties ---------- */
+[data-theme="light"] {
+  /* Core light surfaces */
+  --bg: #f4f6fb;
+  --surface: #ffffff;
+  --surface-alt: #f8fafd;
+  --surface-raised: #f1f5f9;
+  --surface-hover: #edf2f9;
+
+  /* Borders */
+  --line: #e2e8f0;
+  --line-light: #edf2f7;
+
+  /* Hero */
+  --navy-deep: #0f172a;
+  --navy: #1e293b;
+  --indigo: #2d3b55;
+
+  /* Text */
+  --text: #0f172a;
+  --text-soft: #475569;
+  --text-muted: #94a3b8;
+
+  /* Accents */
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-light: rgba(59, 130, 246, 0.08);
+  --accent-glow: rgba(59, 130, 246, 0.25);
+  --cyan: #06b6d4;
+  --gradient: linear-gradient(135deg, #3b82f6, #06b6d4);
+  --gradient-hover: linear-gradient(135deg, #2563eb, #0891b2);
+
+  /* Status */
+  --ok-bg: #ecfdf5;
+  --ok-ink: #059669;
+  --ok-border: #34d399;
+  --err-bg: #fef2f2;
+  --err-ink: #dc2626;
+  --err-border: #f87171;
+  --info-bg: #eff6ff;
+  --info-ink: #2563eb;
+  --info-border: #60a5fa;
+
+  /* Shadows */
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+
+  /* Theme Toggle Pill */
+  --toggle-bg: rgba(255, 255, 255, 0.92);
+  --toggle-border: #cbd5e1;
+  --toggle-text: #1e293b;
 }
 
 /* ---------- Reset & Base ---------- */
@@ -72,6 +132,21 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Smooth theme transitions on core UI cards and controls */
+.panel,
+.data-table,
+.data-table th,
+.data-table td,
+.data-table tbody tr,
+.field select,
+.chart-box,
+.btn-secondary,
+.stats > div,
+.dropzone {
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 :focus-visible {
@@ -99,6 +174,100 @@ body {
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover { background: #4e5a80; }
+
+[data-theme="light"] ::-webkit-scrollbar-track { background: var(--surface); }
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: #cbd5e1; }
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ================================================================
+   THEME TOGGLE BUTTON (Floating Pill)
+   ================================================================ */
+.theme-toggle-wrap {
+  position: fixed;
+  top: 18px;
+  right: 24px;
+  z-index: 100;
+}
+
+.theme-toggle-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--toggle-bg);
+  border: 1px solid var(--toggle-border);
+  border-radius: 999px;
+  color: var(--toggle-text);
+  font-family: var(--font);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.theme-toggle-btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-lg), 0 0 0 3px var(--accent-glow);
+}
+
+.theme-toggle-btn:active {
+  transform: translateY(0);
+}
+
+.toggle-icon-wrap {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sun-icon,
+.moon-icon {
+  position: absolute;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+}
+
+/* In dark mode: show sun icon to indicate clicking switches to light mode */
+:root .sun-icon,
+[data-theme="dark"] .sun-icon {
+  opacity: 1;
+  transform: rotate(0) scale(1);
+  color: #fbbf24;
+}
+
+:root .moon-icon,
+[data-theme="dark"] .moon-icon {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.4);
+  pointer-events: none;
+}
+
+/* In light mode: show moon icon to indicate clicking switches to dark mode */
+[data-theme="light"] .sun-icon {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.4);
+  pointer-events: none;
+}
+
+[data-theme="light"] .moon-icon {
+  opacity: 1;
+  transform: rotate(0) scale(1);
+  color: #3b82f6;
+}
+
+.theme-status {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
 
 /* ================================================================
    MASTHEAD / HERO
@@ -906,6 +1075,85 @@ h3 {
 }
 
 /* ================================================================
+   LIGHT THEME COMPONENT REFINEMENTS
+   ================================================================ */
+[data-theme="light"] .badge-numeric {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+[data-theme="light"] .badge-categorical {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+[data-theme="light"] .badge-datetime {
+  background: #f3e8ff;
+  color: #7c3aed;
+}
+
+[data-theme="light"] .data-table th {
+  background: #f1f5f9;
+  color: #1e293b;
+  border-bottom: 2px solid var(--accent);
+}
+
+[data-theme="light"] .field select {
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+[data-theme="light"] .field select option {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+[data-theme="light"] .dropzone {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .dropzone:hover {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+
+[data-theme="light"] .loading {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+[data-theme="light"] .loading-box {
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .spinner {
+  border-color: #e2e8f0;
+  border-top-color: var(--accent);
+}
+
+[data-theme="light"] .chart-box {
+  background: #ffffff;
+}
+
+[data-theme="light"] .btn-secondary {
+  background: #ffffff;
+  color: var(--accent);
+  border-color: var(--line);
+}
+
+[data-theme="light"] .btn-secondary:hover:not(:disabled) {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+
+[data-theme="light"] .btn:disabled {
+  background: #edf2f7;
+  color: #94a3b8;
+  border-color: transparent;
+}
+
+/* ================================================================
    RESPONSIVE — LARGE SCREENS
    ================================================================ */
 @media (min-width: 900px) {
@@ -921,12 +1169,20 @@ h3 {
    RESPONSIVE — PHONES
    ================================================================ */
 @media (max-width: 600px) {
+  .theme-toggle-wrap {
+    top: 12px;
+    right: 12px;
+  }
+  .theme-toggle-btn {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+  }
   .panel {
     padding: 22px 18px;
     margin-top: 20px;
   }
   .masthead {
-    padding: 40px 0 48px;
+    padding: 56px 0 44px;
   }
   .masthead h1 {
     font-size: 1.8rem;

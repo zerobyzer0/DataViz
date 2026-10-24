@@ -47,6 +47,7 @@
   function $(id) { return document.getElementById(id); }
 
   var el = {
+    themeToggle: $("theme-toggle"), themeStatus: $("theme-status"),
     dropzone: $("dropzone"), fileInput: $("file-input"), chooseBtn: $("choose-btn"),
     fileName: $("file-name"), uploadBtn: $("upload-btn"), uploadMsg: $("upload-message"),
     previewSection: $("preview-section"), stats: $("stats"),
@@ -68,6 +69,7 @@
   var selectedFile = null;
   var dataset = null;       // the JSON returned by /upload
   var lastTitle = "chart";
+  var lastChartData = null; // store for redrawing on theme switch
 
   // ------------------------------------------------------------------
   // Small helpers
@@ -429,12 +431,17 @@
   // ------------------------------------------------------------------
   // Generating and drawing the chart
   // ------------------------------------------------------------------
+  function isDarkMode() {
+    return document.documentElement.getAttribute("data-theme") !== "light";
+  }
+
   function resetChart() {
     if (typeof Plotly !== "undefined") Plotly.purge(el.chart);
     el.chart.hidden = true;
     el.chartEmpty.hidden = false;
     el.chartNote.hidden = true;
     el.downloadBtn.disabled = true;
+    lastChartData = null;
     updateDisabledTooltips();
   }
 
@@ -502,27 +509,57 @@
   }
 
   function baseLayout(chart) {
+    var dark = isDarkMode();
     return {
-      title: { text: chart.title, font: { size: 18, family: FONT, weight: 700, color: "#e8ecf4" }, x: 0.02, xanchor: "left" },
-      paper_bgcolor: "#1a2035",
-      plot_bgcolor: "#1a2035",
-      font: { family: FONT, color: "#b0bdd0" },
+      title: {
+        text: chart.title,
+        font: { size: 18, family: FONT, weight: 700, color: dark ? "#e8ecf4" : "#0f172a" },
+        x: 0.02,
+        xanchor: "left"
+      },
+      paper_bgcolor: dark ? "#1a2035" : "#ffffff",
+      plot_bgcolor: dark ? "#1a2035" : "#ffffff",
+      font: { family: FONT, color: dark ? "#b0bdd0" : "#475569" },
       margin: { t: 90, r: 28, b: 40, l: 40 },
       showlegend: true,
-      legend: { orientation: "h", x: 1, xanchor: "right", y: 1.02, yanchor: "bottom", font: { color: "#8892a8" } },
-      hoverlabel: { font: { family: FONT, color: "#e8ecf4" }, bgcolor: "#232a48", bordercolor: "#3a4468" },
-      xaxis: { title: { text: chart.x_label, font: { color: "#8892a8" } }, automargin: true, gridcolor: "#2a3352", zeroline: false, tickfont: { color: "#8892a8" } },
-      yaxis: { title: { text: chart.y_label, font: { color: "#8892a8" } }, automargin: true, gridcolor: "#2a3352", zerolinecolor: "#3a4468", tickfont: { color: "#8892a8" } }
+      legend: {
+        orientation: "h",
+        x: 1,
+        xanchor: "right",
+        y: 1.02,
+        yanchor: "bottom",
+        font: { color: dark ? "#8892a8" : "#64748b" }
+      },
+      hoverlabel: {
+        font: { family: FONT, color: dark ? "#e8ecf4" : "#0f172a" },
+        bgcolor: dark ? "#232a48" : "#ffffff",
+        bordercolor: dark ? "#3a4468" : "#cbd5e1"
+      },
+      xaxis: {
+        title: { text: chart.x_label, font: { color: dark ? "#8892a8" : "#475569" } },
+        automargin: true,
+        gridcolor: dark ? "#2a3352" : "#f1f5f9",
+        zeroline: false,
+        tickfont: { color: dark ? "#8892a8" : "#64748b" }
+      },
+      yaxis: {
+        title: { text: chart.y_label, font: { color: dark ? "#8892a8" : "#475569" } },
+        automargin: true,
+        gridcolor: dark ? "#2a3352" : "#f1f5f9",
+        zerolinecolor: dark ? "#3a4468" : "#e2e8f0",
+        tickfont: { color: dark ? "#8892a8" : "#64748b" }
+      }
     };
   }
 
   function buildTrace(chart) {
+    var dark = isDarkMode();
     switch (chart.type) {
       case "pie":
         return {
           type: "pie", labels: chart.labels, values: chart.values, sort: false,
           name: chart.y_label, textinfo: "percent",
-          marker: { colors: PALETTE, line: { color: "#1a2035", width: 2 } },
+          marker: { colors: PALETTE, line: { color: dark ? "#1a2035" : "#ffffff", width: 2 } },
           hovertemplate: "<b>%{label}</b><br>" + chart.y_label + ": %{value:,.2f}<br>%{percent}<extra></extra>"
         };
       case "bar":
@@ -534,7 +571,7 @@
       case "scatter":
         return {
           type: "scatter", mode: "markers", x: chart.x, y: chart.y, name: chart.title,
-          marker: { color: PALETTE[0], size: 9, opacity: 0.75, line: { color: "#ffffff", width: 1 } },
+          marker: { color: PALETTE[0], size: 9, opacity: 0.75, line: { color: dark ? "#1a2035" : "#ffffff", width: 1 } },
           hovertemplate: chart.x_label + ": %{x}<br>" + chart.y_label + ": %{y}<extra></extra>"
         };
       case "line":
@@ -547,18 +584,20 @@
       default: // histogram
         return {
           type: "histogram", x: chart.values, name: chart.x_label,
-          marker: { color: PALETTE[0], line: { color: "#ffffff", width: 1 } },
+          marker: { color: PALETTE[0], line: { color: dark ? "#1a2035" : "#ffffff", width: 1 } },
           hovertemplate: chart.x_label + ": %{x}<br>Count: %{y}<extra></extra>"
         };
     }
   }
 
   function drawChart(chart) {
+    lastChartData = chart;
+    var dark = isDarkMode();
     var layout = baseLayout(chart);
     if (chart.type === "pie") {
       delete layout.xaxis;
       delete layout.yaxis;
-      layout.legend = { orientation: "v", x: 1.02, xanchor: "left", y: 0.5, font: { color: "#8892a8" } };
+      layout.legend = { orientation: "v", x: 1.02, xanchor: "left", y: 0.5, font: { color: dark ? "#8892a8" : "#64748b" } };
       layout.margin = { t: 70, r: 20, b: 30, l: 20 };
     }
     if (chart.type === "histogram") layout.bargap = 0.04;
@@ -643,8 +682,58 @@
     });
   });
 
-  // Initialize: step 1 active, tooltips set
+  // ------------------------------------------------------------------
+  // Dark / Light Theme Toggle Management
+  // ------------------------------------------------------------------
+  function applyTheme(theme) {
+    var isDark = theme === "dark";
+    document.documentElement.setAttribute("data-theme", theme);
+    try {
+      localStorage.setItem("dataviz-theme", theme);
+    } catch (e) {}
+
+    var metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.setAttribute("content", isDark ? "#0b0f19" : "#f4f6fb");
+    }
+
+    if (el.themeStatus) {
+      el.themeStatus.textContent = isDark ? "Light Mode" : "Dark Mode";
+    }
+    if (el.themeToggle) {
+      el.themeToggle.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
+      el.themeToggle.setAttribute("title", isDark ? "Switch to light mode" : "Switch to dark mode");
+    }
+
+    // Immediately re-draw active chart with the new theme colors if visible
+    if (lastChartData && !el.chart.hidden && typeof Plotly !== "undefined") {
+      drawChart(lastChartData);
+    }
+  }
+
+  function toggleTheme() {
+    var current = document.documentElement.getAttribute("data-theme") || "dark";
+    var nextTheme = current === "dark" ? "light" : "dark";
+    applyTheme(nextTheme);
+  }
+
+  if (el.themeToggle) {
+    el.themeToggle.addEventListener("click", toggleTheme);
+  }
+
+  // Initialize: step 1 active, tooltips set, and theme initialized
   updateActiveStep(1);
   updateDisabledTooltips();
+
+  var initialTheme = document.documentElement.getAttribute("data-theme");
+  if (!initialTheme) {
+    try {
+      initialTheme = localStorage.getItem("dataviz-theme");
+    } catch (e) {}
+  }
+  if (!initialTheme) {
+    initialTheme = (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) ? "light" : "dark";
+  }
+  applyTheme(initialTheme);
 
 })();
