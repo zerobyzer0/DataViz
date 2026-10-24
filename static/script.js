@@ -1,5 +1,5 @@
 /*
- * DataViz — frontend logic
+ * DataViz — frontend logic (enhanced with micro-interactions)
  *
  * 1. Upload:  send the chosen file to Flask  (POST /upload)
  * 2. Preview: show the columns and first rows Flask sends back
@@ -11,9 +11,9 @@
 
   var MAX_MB = Number(document.body.dataset.maxMb) || 5;
   var ALLOWED = ["csv", "xlsx", "xls"];
-  var PALETTE = ["#0e6e6a", "#e4572e", "#f2a900", "#3d5a80", "#7b9e89",
+  var PALETTE = ["#4361ee", "#e4572e", "#f2a900", "#3d5a80", "#7b9e89",
                  "#a8576b", "#2e4057", "#c9a227", "#5b8e7d", "#8d99ae"];
-  var FONT = '"IBM Plex Sans", "Segoe UI", system-ui, sans-serif';
+  var FONT = '"Inter", -apple-system, "Segoe UI", system-ui, sans-serif';
 
   // What each chart type needs from the user
   var CHARTS = {
@@ -127,6 +127,88 @@
   }
 
   // ------------------------------------------------------------------
+  // UI Enhancement: Ripple effect on buttons
+  // ------------------------------------------------------------------
+  function createRipple(event) {
+    var button = event.currentTarget;
+    if (button.disabled) return;
+
+    var circle = document.createElement("span");
+    var diameter = Math.max(button.clientWidth, button.clientHeight);
+    var radius = diameter / 2;
+    var rect = button.getBoundingClientRect();
+
+    circle.style.width = circle.style.height = diameter + "px";
+    circle.style.left = (event.clientX - rect.left - radius) + "px";
+    circle.style.top = (event.clientY - rect.top - radius) + "px";
+    circle.className = "ripple";
+
+    // Remove old ripples
+    var existingRipple = button.querySelector(".ripple");
+    if (existingRipple) existingRipple.remove();
+
+    button.appendChild(circle);
+    setTimeout(function () { circle.remove(); }, 600);
+  }
+
+  // ------------------------------------------------------------------
+  // UI Enhancement: Counter animation for stats
+  // ------------------------------------------------------------------
+  function animateCounter(element, targetValue) {
+    var duration = 800;
+    var startTime = null;
+    var startValue = 0;
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function step(timestamp) {
+      if (!startTime) startTime = timestamp;
+      var progress = Math.min((timestamp - startTime) / duration, 1);
+      var easedProgress = easeOutCubic(progress);
+      var currentValue = Math.round(startValue + (targetValue - startValue) * easedProgress);
+      element.textContent = currentValue.toLocaleString();
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      }
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  // ------------------------------------------------------------------
+  // UI Enhancement: Active step tracking
+  // ------------------------------------------------------------------
+  function updateActiveStep(stepNumber) {
+    var panels = document.querySelectorAll(".panel");
+    panels.forEach(function (panel, index) {
+      panel.classList.remove("is-active", "is-completed");
+      if (index + 1 < stepNumber) {
+        panel.classList.add("is-completed");
+      } else if (index + 1 === stepNumber) {
+        panel.classList.add("is-active");
+      }
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // UI Enhancement: Disabled button tooltips
+  // ------------------------------------------------------------------
+  function updateDisabledTooltips() {
+    if (el.uploadBtn.disabled) {
+      el.uploadBtn.title = "Select a file first to upload";
+    } else {
+      el.uploadBtn.title = "";
+    }
+    if (el.downloadBtn.disabled) {
+      el.downloadBtn.title = "Generate a chart first to export";
+    } else {
+      el.downloadBtn.title = "";
+    }
+  }
+
+  // ------------------------------------------------------------------
   // Step 1: choosing and uploading a file
   // ------------------------------------------------------------------
   function selectFile(file) {
@@ -139,6 +221,7 @@
       el.fileName.classList.remove("is-set");
       el.uploadBtn.disabled = true;
       showMessage(el.uploadMsg, "error", "Unsupported file type. Please choose a .csv, .xlsx or .xls file.");
+      updateDisabledTooltips();
       return;
     }
     if (file.size > MAX_MB * 1024 * 1024) {
@@ -147,6 +230,7 @@
       el.fileName.classList.remove("is-set");
       el.uploadBtn.disabled = true;
       showMessage(el.uploadMsg, "error", "That file is " + formatSize(file.size) + ". The limit is " + MAX_MB + " MB.");
+      updateDisabledTooltips();
       return;
     }
 
@@ -154,6 +238,13 @@
     el.fileName.textContent = file.name + " (" + formatSize(file.size) + ")";
     el.fileName.classList.add("is-set");
     el.uploadBtn.disabled = false;
+    updateDisabledTooltips();
+
+    // Flash success on dropzone
+    el.dropzone.classList.add("is-success");
+    setTimeout(function () {
+      el.dropzone.classList.remove("is-success");
+    }, 1000);
   }
 
   function uploadFile() {
@@ -180,6 +271,7 @@
           data.filename + " loaded: " + data.rows.toLocaleString() + " rows and " +
           data.column_count + " columns.");
         scrollToSection(el.previewSection);
+        updateActiveStep(2);
       })
       .catch(function (err) {
         showMessage(el.uploadMsg, "error", friendlyError(err));
@@ -197,10 +289,21 @@
     var dt = document.createElement("dt");
     var dd = document.createElement("dd");
     dt.textContent = label;
-    dd.textContent = value;
-    wrap.appendChild(dt);
-    wrap.appendChild(dd);
-    el.stats.appendChild(wrap);
+
+    // Try to animate the counter for numeric values
+    var numericValue = parseInt(String(value).replace(/,/g, ""), 10);
+    if (!isNaN(numericValue) && numericValue >= 0) {
+      dd.textContent = "0";
+      wrap.appendChild(dt);
+      wrap.appendChild(dd);
+      el.stats.appendChild(wrap);
+      animateCounter(dd, numericValue);
+    } else {
+      dd.textContent = value;
+      wrap.appendChild(dt);
+      wrap.appendChild(dd);
+      el.stats.appendChild(wrap);
+    }
   }
 
   function renderDataset(data) {
@@ -258,8 +361,14 @@
     resetChart();
     clearMessage(el.chartMsg);
     updateChartControls();
+
+    // Reveal sections with animation
     el.previewSection.hidden = false;
+    el.previewSection.classList.add("is-visible");
     el.chartSection.hidden = false;
+    setTimeout(function () {
+      el.chartSection.classList.add("is-visible");
+    }, 150);
   }
 
   // ------------------------------------------------------------------
@@ -326,6 +435,7 @@
     el.chartEmpty.hidden = false;
     el.chartNote.hidden = true;
     el.downloadBtn.disabled = true;
+    updateDisabledTooltips();
   }
 
   function generateChart() {
@@ -348,7 +458,11 @@
       return;
     }
 
-    showLoading("Building your graph…");
+    // Add loading state to chart box
+    var chartBox = el.chart.parentElement;
+    chartBox.classList.add("is-loading");
+
+    showLoading("Building your visualization…");
     fetch("/chart", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -369,12 +483,19 @@
         });
       })
       .then(function (chart) {
+        chartBox.classList.remove("is-loading");
         drawChart(chart);
         showMessage(el.chartMsg, "success",
-          "Graph built from " + chart.rows_used.toLocaleString() + " of " +
+          "Visualization built from " + chart.rows_used.toLocaleString() + " of " +
           dataset.rows.toLocaleString() + " rows.");
+
+        // Auto-scroll to chart
+        setTimeout(function () {
+          scrollToSection(chartBox);
+        }, 100);
       })
       .catch(function (err) {
+        chartBox.classList.remove("is-loading");
         showMessage(el.chartMsg, "error", friendlyError(err));
       })
       .then(hideLoading);
@@ -382,16 +503,16 @@
 
   function baseLayout(chart) {
     return {
-      title: { text: chart.title, font: { size: 18 }, x: 0.02, xanchor: "left" },
-      paper_bgcolor: "#ffffff",
-      plot_bgcolor: "#ffffff",
-      font: { family: FONT, color: "#16222e" },
+      title: { text: chart.title, font: { size: 18, family: FONT, weight: 700, color: "#e8ecf4" }, x: 0.02, xanchor: "left" },
+      paper_bgcolor: "#1a2035",
+      plot_bgcolor: "#1a2035",
+      font: { family: FONT, color: "#b0bdd0" },
       margin: { t: 90, r: 28, b: 40, l: 40 },
       showlegend: true,
-      legend: { orientation: "h", x: 1, xanchor: "right", y: 1.02, yanchor: "bottom" },
-      hoverlabel: { font: { family: FONT } },
-      xaxis: { title: { text: chart.x_label }, automargin: true, gridcolor: "#e6ecea", zeroline: false },
-      yaxis: { title: { text: chart.y_label }, automargin: true, gridcolor: "#e6ecea", zerolinecolor: "#c5d0cd" }
+      legend: { orientation: "h", x: 1, xanchor: "right", y: 1.02, yanchor: "bottom", font: { color: "#8892a8" } },
+      hoverlabel: { font: { family: FONT, color: "#e8ecf4" }, bgcolor: "#232a48", bordercolor: "#3a4468" },
+      xaxis: { title: { text: chart.x_label, font: { color: "#8892a8" } }, automargin: true, gridcolor: "#2a3352", zeroline: false, tickfont: { color: "#8892a8" } },
+      yaxis: { title: { text: chart.y_label, font: { color: "#8892a8" } }, automargin: true, gridcolor: "#2a3352", zerolinecolor: "#3a4468", tickfont: { color: "#8892a8" } }
     };
   }
 
@@ -401,13 +522,13 @@
         return {
           type: "pie", labels: chart.labels, values: chart.values, sort: false,
           name: chart.y_label, textinfo: "percent",
-          marker: { colors: PALETTE, line: { color: "#ffffff", width: 2 } },
+          marker: { colors: PALETTE, line: { color: "#1a2035", width: 2 } },
           hovertemplate: "<b>%{label}</b><br>" + chart.y_label + ": %{value:,.2f}<br>%{percent}<extra></extra>"
         };
       case "bar":
         return {
           type: "bar", x: chart.labels, y: chart.values, name: chart.y_label,
-          marker: { color: PALETTE[0] },
+          marker: { color: PALETTE[0], cornerradius: 4 },
           hovertemplate: "<b>%{x}</b><br>" + chart.y_label + ": %{y:,.2f}<extra></extra>"
         };
       case "scatter":
@@ -420,7 +541,7 @@
         return {
           type: "scatter", mode: chart.y.length <= 100 ? "lines+markers" : "lines",
           x: chart.x, y: chart.y, name: chart.y_label,
-          line: { color: PALETTE[0], width: 3 }, marker: { size: 7 },
+          line: { color: PALETTE[0], width: 3, shape: "spline" }, marker: { size: 7 },
           hovertemplate: chart.x_label + ": %{x}<br>" + chart.y_label + ": %{y}<extra></extra>"
         };
       default: // histogram
@@ -437,7 +558,7 @@
     if (chart.type === "pie") {
       delete layout.xaxis;
       delete layout.yaxis;
-      layout.legend = { orientation: "v", x: 1.02, xanchor: "left", y: 0.5 };
+      layout.legend = { orientation: "v", x: 1.02, xanchor: "left", y: 0.5, font: { color: "#8892a8" } };
       layout.margin = { t: 70, r: 20, b: 30, l: 20 };
     }
     if (chart.type === "histogram") layout.bargap = 0.04;
@@ -449,6 +570,7 @@
 
     lastTitle = chart.title;
     el.downloadBtn.disabled = false;
+    updateDisabledTooltips();
 
     if (chart.note) {
       el.chartNote.textContent = chart.note;
@@ -494,7 +616,35 @@
   el.chartType.addEventListener("change", function () {
     clearMessage(el.chartMsg);
     updateChartControls();
+    updateActiveStep(3);
   });
   el.generateBtn.addEventListener("click", generateChart);
   el.downloadBtn.addEventListener("click", downloadPng);
+
+  // Ripple effect on all buttons
+  document.querySelectorAll(".btn").forEach(function (btn) {
+    btn.addEventListener("click", createRipple);
+  });
+
+  // Keyboard shortcut: Ctrl+Enter or Cmd+Enter to generate chart
+  document.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      if (!el.chartSection.hidden && dataset) {
+        e.preventDefault();
+        generateChart();
+      }
+    }
+  });
+
+  // Chart controls focus triggers step 3 active state
+  [el.chartType, el.xCol, el.yCol, el.agg].forEach(function (control) {
+    control.addEventListener("focus", function () {
+      updateActiveStep(3);
+    });
+  });
+
+  // Initialize: step 1 active, tooltips set
+  updateActiveStep(1);
+  updateDisabledTooltips();
+
 })();

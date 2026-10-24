@@ -3,19 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1a1a2e">
   <title>DataViz — CSV Data Visualization</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
- <link rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet"
+       href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body data-max-mb="{{ max_mb }}">
 
   <header class="masthead">
+    <div class="hero-shapes">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+    </div>
     <div class="wrap">
-      <h1>DataViz — CSV Data Visualization</h1>
-      <p>Upload a CSV or Excel file and turn its columns into pie charts, bar graphs, scatter plots, line graphs and histograms. Python and Pandas read your data on the server, and Plotly draws the charts in your browser.</p>
+      <h1>DataViz</h1>
+      <p class="hero-subtitle">Transform your data into stunning visualizations</p>
+      <p class="hero-desc">Upload CSV or Excel files and instantly create beautiful pie charts, bar graphs, scatter plots, line graphs, and histograms — powered by Pandas &amp; Plotly.</p>
     </div>
   </header>
 
@@ -23,30 +31,30 @@
 
     <!-- 1. Upload -->
     <section class="panel" aria-labelledby="upload-title">
-      <h2 class="panel-title" id="upload-title"><span class="step" aria-hidden="true">1</span>Upload your data</h2>
+      <h2 class="panel-title" id="upload-title"><span class="step" aria-hidden="true">1</span>Upload Your Data</h2>
 
       <div id="dropzone" class="dropzone">
-        <svg class="dz-icon" viewBox="0 0 48 48" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <svg class="dz-icon" viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M24 32V10M15 19l9-9 9 9M8 32v6a2 2 0 0 0 2 2h28a2 2 0 0 0 2-2v-6"/>
         </svg>
-        <p class="dz-title">Drag and drop a file here</p>
-      <p class="dz-hint">
-      CSV, XLSX or XLS files, up to {{ max_mb }} MB.
-      </p>
-        <button type="button" id="choose-btn" class="btn btn-secondary">Choose file</button>
+        <p class="dz-title">Drag & drop your file here</p>
+        <p class="dz-hint">
+          Supports CSV, XLSX & XLS files up to {{ max_mb }} MB
+        </p>
+        <button type="button" id="choose-btn" class="btn btn-secondary">Browse Files</button>
         <input type="file" id="file-input" accept=".csv,.xlsx,.xls" hidden>
       </div>
 
       <div class="file-row">
         <p class="file-name" id="file-name">No file selected</p>
-        <button type="button" id="upload-btn" class="btn btn-primary" disabled>Upload File</button>
+        <button type="button" id="upload-btn" class="btn btn-primary" disabled>Upload & Analyze</button>
       </div>
       <div id="upload-message"></div>
     </section>
 
     <!-- 2. Preview -->
     <section class="panel" id="preview-section" aria-labelledby="preview-title" hidden>
-      <h2 class="panel-title" id="preview-title"><span class="step" aria-hidden="true">2</span>Check your data</h2>
+      <h2 class="panel-title" id="preview-title"><span class="step" aria-hidden="true">2</span>Data Preview</h2>
 
       <dl class="stats" id="stats"></dl>
 
@@ -74,7 +82,7 @@
 
     <!-- 3. Chart builder -->
     <section class="panel" id="chart-section" aria-labelledby="chart-title" hidden>
-      <h2 class="panel-title" id="chart-title"><span class="step" aria-hidden="true">3</span>Build a graph</h2>
+      <h2 class="panel-title" id="chart-title"><span class="step" aria-hidden="true">3</span>Build Your Visualization</h2>
 
       <div class="builder">
         <div class="controls">
@@ -110,8 +118,8 @@
           </div>
 
           <div class="button-stack">
-            <button type="button" id="generate-btn" class="btn btn-primary">Generate Graph</button>
-            <button type="button" id="download-btn" class="btn btn-secondary" disabled>Download PNG</button>
+            <button type="button" id="generate-btn" class="btn btn-primary">Generate Visualization</button>
+            <button type="button" id="download-btn" class="btn btn-secondary" disabled>Export as PNG</button>
           </div>
           <div id="chart-message"></div>
         </div>
@@ -119,7 +127,7 @@
         <div class="chart-column">
           <div class="chart-box">
             <div class="chart-empty" id="chart-empty">
-              <p>Choose columns and select <strong>Generate Graph</strong>.<br>Your chart will appear here.</p>
+              <p>Select your chart type and columns, then click <strong>Generate Visualization</strong>.<br>Your chart will appear here.</p>
             </div>
             <div id="chart" hidden></div>
           </div>
@@ -131,7 +139,7 @@
   </main>
 
   <footer class="wrap site-footer">
-    <p>Built with Flask, Pandas and Plotly.js.</p>
+    <p>DataViz — Built with Flask, Pandas & Plotly</p>
   </footer>
 
   <!-- Loading indicator -->
